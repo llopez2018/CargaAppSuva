@@ -2,6 +2,21 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+<key>NSCameraUsageDescription</key>
+<string>Esta aplicación necesita acceder a la cámara para tomar fotos.</string>
+<key>NSPhotoLibraryAddUsageDescription</key>
+<string>Esta aplicación necesita acceder a la galería para guardar fotos.</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>Esta aplicación necesita acceder a la galería para seleccionar fotos.</string>
+<key>NSCameraUsageDescription</key>
+<string>Necesitamos acceso a tu cámara</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>Necesitamos acceso a tu galería de fotos</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+<string>Need location access to find near by restaurants</string>
+<key>NSLocationAlwaysUsageDescription</key>
+<string>Need location access to find near by restaurants</string>
+
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
