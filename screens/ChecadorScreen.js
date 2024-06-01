@@ -1,34 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { Alert, View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { Alert, View, Text, TouchableOpacity, ScrollView, PermissionsAndroid, Platform } from 'react-native';
 import tw from 'tailwind-react-native-classnames';
-import { fetchPostInicioDia } from '../Fetch/apiService';  // Cambia aquí el nombre de la función
+import { fetchPostInicioDia } from '../Fetch/apiService';
 import moment from 'moment';
 import Geolocation from '@react-native-community/geolocation';
-import { PermissionsAndroid, Platform } from 'react-native';
-
-
-
 
 function ChecadorScreen({ route, navigation }) {
     const [isLoading, setIsLoading] = useState(false);
     const [inicioDiaCompletado, setInicioDiaCompletado] = useState(false);
-    const [FinDiaCompletado, setfinDiaCompletado] = useState(false);
+    const [FinDiaCompletado, setFinDiaCompletado] = useState(false);
     const [FinDiaHoraCompletado, setFinHoraDiaCompletado] = useState(false);
     const [horaActual, setHoraActual] = useState(moment().hour());
-    const [minutoActual, setMinutoActual] = useState(moment().minute()); console.log(FinDiaHoraCompletado);
-
+    const [minutoActual, setMinutoActual] = useState(moment().minute());
+    const [location, setLocation] = useState(null);
+    const [region, setRegion] = useState(null);
 
     const activeButtonStyle = tw`bg-blue-500 w-full h-20 py-6 rounded-lg shadow-lg mb-4`;
     const disabledButtonStyle = tw`bg-gray-500 w-full h-20 py-6 rounded-lg shadow-lg mb-4`;
 
-    console.log('Datos recibidos en ChecadorScreen:', route.params); // Asegúrate de que esto se muestre en la consola
     const user = route.params?.user ?? { name: 'Usuario' };
-
-
-    // Utilizar más campos del objeto usuario según sea necesario
     const userName = user.name;
     const tipousuario = user.type;
-    //obtiene la geolocalizacion del dispositovo
 
     const getLocation = () => {
         return new Promise((resolve, reject) => {
@@ -56,23 +48,28 @@ function ChecadorScreen({ route, navigation }) {
         });
     };
 
-
-
-
     useEffect(() => {
-        // Actualizar la hora actual cada minuto
         const interval = setInterval(() => {
             setHoraActual(moment().hour());
             setMinutoActual(moment().minute());
         }, 60000);
-        getLocation(); // Llama a la función al cargar el componente.
 
-        // Limpia el temporizador cuando el componente se desmonta
+        getLocation().then(position => {
+            setLocation(position);
+            setRegion({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+            });
+        }).catch(error => {
+            console.log(error);
+        });
+
         return () => clearInterval(interval);
     }, []);
 
     useEffect(() => {
-        // Cambia 17 por 20 para que la verificación sea después de las 20:00 horas
         if (horaActual >= 20) {
             setFinHoraDiaCompletado(true);
         } else {
@@ -80,19 +77,14 @@ function ChecadorScreen({ route, navigation }) {
         }
     }, [horaActual, minutoActual]);
 
-
-    console.log(horaActual);
-
     const handleInicioDia = async (action) => {
         setIsLoading(true);
         try {
             const location = await getLocation();
             if (!location) {
-                // Si no hay ubicación, muestra una alerta y no continúes
                 Alert.alert("Error", "Ubicación no disponible");
-                return;  // Asegúrate de retornar para no seguir ejecutando la función
+                return;
             }
-
 
             const data = {
                 userName: userName,
@@ -105,18 +97,14 @@ function ChecadorScreen({ route, navigation }) {
             };
             console.log(data);
 
-            const status = await fetchPostInicioDia(data); // Obtiene solo el estado de la respuesta
-            console.log(status)
+            const status = await fetchPostInicioDia(data);
             if (status === 200) {
                 if (action === 'inicio') {
                     setInicioDiaCompletado(true);
                     Alert.alert("Inicio de día", "Inicio de día registrado correctamente!");
                 } else if (action === 'fin') {
-                    // Aquí puedes manejar el estado de finalización, por ejemplo:
-                    setfinDiaCompletado(true);
+                    setFinDiaCompletado(true);
                     Alert.alert("Fin del día", "Fin del día registrado correctamente!");
-                    // Si necesitas otro estado para manejar el botón de finalización:
-                    // setFinDiaCompletado(true);
                 }
             } else {
                 throw new Error('Respuesta del servidor no exitosa');
@@ -129,9 +117,6 @@ function ChecadorScreen({ route, navigation }) {
         }
     };
 
-
-
-
     return (
         <ScrollView style={tw`flex-1 bg-white p-4`}>
             <Text style={tw`text-center text-xl font-bold`}>Checador de Asistencia</Text>
@@ -139,6 +124,8 @@ function ChecadorScreen({ route, navigation }) {
             <Text style={tw`text-center text-justify text-lg mb-5`}>
                 Para hacer uso de la plataforma, primero debes registrar el inicio de tu día con el botón "Inicio de día". Para finalizar tu día, ingresa de nuevo a la app y presiona "Finalizar día".
             </Text>
+
+
 
             <View style={tw`flex-grow items-center justify-around`}>
                 <TouchableOpacity
@@ -158,7 +145,6 @@ function ChecadorScreen({ route, navigation }) {
             </View>
         </ScrollView>
     );
-
 }
 
 export default ChecadorScreen;

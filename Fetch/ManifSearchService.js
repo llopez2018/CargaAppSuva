@@ -9,10 +9,8 @@ export const fetchGetManifSearch = async (ruta, fecha) => {
         }
     });
 
-
     if (!response.ok) {
         throw new Error('Respuesta del servidor no fue exitosa: ' + response.status);
     }
     return await response.json();  // Devuelve el contenido JSON de la respuesta
 };
-

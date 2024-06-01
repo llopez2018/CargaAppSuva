@@ -6,7 +6,8 @@ import {
     TextInput,
     TouchableOpacity,
     ActivityIndicator,
-    FlatList
+    FlatList,
+    Modal,
 } from 'react-native';
 import tw from 'tailwind-react-native-classnames';
 import moment from 'moment';
@@ -14,6 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { Dimensions } from 'react-native';
 import DatePicker from 'react-native-date-picker';
+import { fetchGetManifSearch } from '../Fetch/ManifSearchService'; // Asegúrate de que la ruta es correcta
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -28,30 +30,38 @@ const ManifiestosRuta = () => {
 
     const navigation = useNavigation();
 
+    // Handler para el cambio de fecha en el DatePicker
     const onChange = (selectedDate) => {
-        const currentDate = selectedDate || fecha;
-        setShowPicker(false);
-        setFecha(currentDate);
-        setDateInput(moment(currentDate).format('YYYY-MM-DD'));
+        setFecha(selectedDate);
     };
 
+    // Función para confirmar la fecha seleccionada
+    const confirmDate = () => {
+        setDateInput(moment(fecha).format('YYYY-MM-DD'));
+        setShowPicker(false);
+    };
+
+    // Función para manejar la búsqueda de manifiestos
     const buscarManifiestos = async () => {
         setLoading(true);
         setError('');
         try {
-            console.log(ruta, dateInput)
+            console.log(ruta, dateInput);
             const json = await fetchGetManifSearch(ruta, dateInput);
 
-            // Asegúrate de que 'orden' sea un número para ordenar correctamente
-            const datosOrdenados = json.map(item => ({
-                ...item,
-                orden: parseFloat(item.orden)
-            })).sort((a, b) => a.orden - b.orden); // Ordena de menor a mayor
+            if (json && Array.isArray(json)) {
+                const datosOrdenados = json.map(item => ({
+                    ...item,
+                    orden: parseFloat(item.orden)
+                })).sort((a, b) => a.orden - b.orden);
 
-            setDatos(datosOrdenados);
+                setDatos(datosOrdenados);
+            } else {
+                throw new Error("Invalid data format received");
+            }
         } catch (error) {
             console.error(error);
-            setError('Error al obtener datos');
+            setError(error.message || 'Error al obtener datos');
         }
         setLoading(false);
     };
@@ -63,18 +73,17 @@ const ManifiestosRuta = () => {
             <View style={styles.inputsContainer}>
                 <Text style={styles.header}>Ingresa La ruta a buscar</Text>
                 <TextInput
-                    style={[styles.input, tw`flex-1 mr-2 text-center`]}
+                    style={[styles.input, styles.inputText, tw`text-center`]}
                     onChangeText={(text) => setRuta(text.replace(/[^0-9]/g, ''))}
                     value={ruta}
                     placeholder="Introduce una ruta"
                     placeholderTextColor="#ccc"
-                    keyboardType="numeric"
                     maxLength={10}
                 />
                 <Text style={styles.header}>Ingresa La fecha de inicio de la ruta</Text>
                 <View style={tw`flex-row items-center justify-center w-full`}>
                     <TextInput
-                        style={[styles.input, tw`flex-1 mr-2 text-center`]}
+                        style={[styles.input, styles.inputText, tw`text-center`]}
                         value={dateInput}
                         editable={false}
                         placeholder="YYYY-MM-DD"
@@ -87,14 +96,35 @@ const ManifiestosRuta = () => {
                         <Icon name="calendar" size={24} color="blue" />
                     </TouchableOpacity>
                 </View>
-                {showPicker && (
-                    <DatePicker
-                        date={fecha}
-                        onDateChange={onChange}
-                        mode="date"
-                        maximumDate={new Date()}
-                    />
-                )}
+                <Modal
+                    transparent={true}
+                    animationType="slide"
+                    visible={showPicker}
+                    onRequestClose={() => setShowPicker(false)}
+                >
+                    <View style={styles.modalContainer}>
+                        <View style={styles.datePickerContainer}>
+                            <DatePicker
+                                date={fecha}
+                                onDateChange={onChange}
+                                mode="date"
+                                maximumDate={new Date()}
+                            />
+                            <TouchableOpacity
+                                onPress={confirmDate}
+                                style={styles.confirmButton}
+                            >
+                                <Text style={styles.confirmButtonText}>Confirmar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => setShowPicker(false)}
+                                style={styles.closeButton}
+                            >
+                                <Text style={styles.closeButtonText}>Cerrar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
                 <TouchableOpacity
                     style={styles.buttonStyle}
                     onPress={buscarManifiestos}
@@ -109,10 +139,10 @@ const ManifiestosRuta = () => {
                 renderItem={({ item, index }) => (
                     <TouchableOpacity
                         style={[styles.row, { backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white' }]}
-                        onPress={() => navigation.navigate('DetalleManifiesto', { itemData: item })}
+                        onPress={() => navigation.navigate('DetalleManifiestoScreen', { itemData: item })}
                     >
                         <Text style={[styles.cell, { width: '30%' }]}>{item.clave}</Text>
-                        <Text style={[styles.cell, { width: '30%' }]}>{item.orden}</Text>
+                        <Text style={[styles.cell, { width: '30%' }]}>{item.orden.toString()}</Text>
                         <Text style={[styles.cell, { width: '40%' }]}>{item.nombre}</Text>
                     </TouchableOpacity>
                 )}
@@ -124,7 +154,10 @@ const ManifiestosRuta = () => {
 const styles = StyleSheet.create({
     container: tw`flex-1 bg-white p-5`,
     header: tw`text-center text-xl font-bold`,
-    input: tw`bg-white w-full rounded-md px-4 py-2 border border-gray-300 mb-4`,
+    input: tw`bg-white w-11/12 rounded-md px-4 py-2 border border-gray-300 mb-4`,
+    inputText: {
+        height: 50, // Increase the height of the TextInput
+    },
     buttonStyle: tw`bg-blue-500 w-11/12 py-4 rounded-lg shadow-lg mb-4`,
     row: tw`flex-row justify-between p-2 border-b border-gray-200`,
     headerRow: tw`flex-row justify-between p-2 border-b border-gray-500 bg-gray-200`,
@@ -134,11 +167,43 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     inputsContainer: {
-        width: screenWidth,
-        justifyContent: 'center',  // Centra los elementos en el contenedor
-        alignItems: 'center',      // Centra los elementos en el contenedor
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
         padding: 10
-    }
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    datePickerContainer: {
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    confirmButton: {
+        marginTop: 20,
+        padding: 10,
+        backgroundColor: 'green',
+        borderRadius: 5,
+    },
+    confirmButtonText: {
+        color: 'white',
+        fontSize: 16,
+    },
+    closeButton: {
+        marginTop: 10,
+        padding: 10,
+        backgroundColor: 'blue',
+        borderRadius: 5,
+    },
+    closeButtonText: {
+        color: 'white',
+        fontSize: 16,
+    },
 });
 
 export default ManifiestosRuta;
