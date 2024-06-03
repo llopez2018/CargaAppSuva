@@ -1,25 +1,37 @@
-import React, { useState } from 'react';
-import { View, Button, Text, ScrollView, Alert, Image, PermissionsAndroid, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Button, Text, ScrollView, Alert, Image, PermissionsAndroid, Platform, TextInput } from 'react-native';
 import tw from 'tailwind-react-native-classnames';
-import { TextInput } from 'react-native-gesture-handler';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
-import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import RNFS from 'react-native-fs';
-import ImageResizer from 'react-native-image-resizer';  // Import the image resizer library
+import ImageResizer from 'react-native-image-resizer';
+import { fetchPostCrearImagen } from '../Fetch/CrearImagenes';  // Import the API service function
+import DeviceInfo from 'react-native-device-info';  // Import Device Info
+import { text } from 'stream/consumers';
 
 const styles = {
     scrollView: tw`bg-white bg-opacity-80 rounded-lg p-5 `,
     view: tw`px-3 py-4`,
-    group: tw`mb-4 p-3 border border-gray-300 rounded-lg shadow bg-white bg-opacity-80 `,
     group_image: tw`mb-4 p-3 border border-gray-300 rounded-lg shadow bg-white bg-opacity-80 `,
     groupTitle: tw`text-lg text-black mb-2 font-semibold text-center`,
     imageGrid: tw`flex flex-wrap justify-center items-center`,
     imageItem: tw`w-1/2 p-1 shadow rounded-lg`,
-    image: { width: '100%', height: 100, borderRadius: 5 }
+    image: { width: '100%', height: 100, borderRadius: 5 },
+    textInputStyle: tw`border border-gray-300 rounded-lg p-2 text-center`
 };
 
 const ImagePickerScreen = () => {
     const [images, setImages] = useState([]);
+    const [Ruta, setRuta] = useState('');
+
+    useEffect(() => {
+        // Obtener el identificador único del dispositivo
+        const fetchDeviceInfo = async () => {
+            const uniqueId = await DeviceInfo.getUniqueId();
+        };
+
+        fetchDeviceInfo();
+    }, []);
 
     const requestCameraPermission = async () => {
         if (Platform.OS === 'android') {
@@ -123,6 +135,12 @@ const ImagePickerScreen = () => {
     };
 
     const grabar = async () => {
+        // Verificar si no hay imágenes cargadas
+        if (images.length === 0) {
+            Alert.alert('Alerta de verificacion', 'No se han cargado imágenes para almacenar.');
+            return;
+        }
+
         const base64Images = await Promise.all(images.map(async (image) => {
             const originalSize = await getFileSize(image.uri);
             console.log(`Original size of image: ${originalSize} bytes`);
@@ -136,10 +154,50 @@ const ImagePickerScreen = () => {
                 if (base64) {
                     console.log(`Size of image in Base64: ${base64.length} characters`);
                 }
-                return base64;
+                return {
+                    base64,
+                    path: image.uri
+                };
             }
             return null;
         }));
+
+        // Enviar cada imagen en una petición separada
+        let allUploadsSuccessful = true;
+        for (const image of base64Images.filter(image => image !== null)) {
+            const data = {
+                ruta: "2",
+                usuario: "lhld",
+                manifiesto: "1234",
+                imagenBase64: image.base64,
+                tipoDeImagen: "png",
+                categoria: "Autos"
+            };
+
+            try {
+                const responseStatus = await fetchPostCrearImagen(data);
+                if (responseStatus !== 200) {
+                    Alert.alert('Error', `Failed to upload image. Status code: ${responseStatus}`);
+                    allUploadsSuccessful = false;
+                }
+            } catch (error) {
+                Alert.alert('Error', `Failed to upload image: ${error.message}`);
+                allUploadsSuccessful = false;
+            }
+        }
+
+        if (allUploadsSuccessful) {
+            // Mostrar alerta de éxito
+            Alert.alert('Success', 'All images uploaded successfully!', [
+                {
+                    text: 'OK',
+                    onPress: () => {
+                        // Limpiar la pantalla
+                        setImages([]);
+                    }
+                }
+            ]);
+        }
     };
 
     return (
@@ -148,17 +206,16 @@ const ImagePickerScreen = () => {
                 <View style={styles.group}>
                     <Text style={styles.groupTitle}>Cargar Evidencia</Text>
                     <TextInput
-                        style={tw`flex-1 h-10 my-2 bg-white rounded-md p-2 border border-gray-300`}
-                        value="Ruta Asignada"
+                        style={[styles.textInputStyle, { width: '100%' }]}
+                        placeholder="Ruta"
+                        value={Ruta}
+                        onChangeText={text => {
+                            // Only allow numbers
+                            const numericValue = text.replace(/[^0-9]/g, '');
+                            setRuta(numericValue);
+                        }}
                     />
-                    <TextInput
-                        style={tw`flex-1 h-10 my-2 bg-white rounded-md p-2 border border-gray-300`}
-                        value="Fecha"
-                    />
-                    <TextInput
-                        style={tw`flex-1 h-10 my-2 bg-white rounded-md p-2 border border-gray-300`}
-                        value="Manifiesto"
-                    />
+
                     <Button title="Seleccionar Manifiestos" onPress={handleSelectImages} />
                     <Button title="Tomar Foto" onPress={takePhoto} />
                 </View>
