@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Button, Text, ScrollView, Alert, Image, PermissionsAndroid, Platform, TextInput } from 'react-native';
 import tw from 'tailwind-react-native-classnames';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import RNFS from 'react-native-fs';
-import ImageResizer from 'react-native-image-resizer';
 import { fetchPostCrearImagen } from '../Fetch/CrearImagenes';  // Import the API service function
 import DeviceInfo from 'react-native-device-info';  // Import Device Info
-import { text } from 'stream/consumers';
+import { UserContext } from '../App';
 
 const styles = {
     scrollView: tw`bg-white bg-opacity-80 rounded-lg p-5 `,
@@ -17,12 +16,16 @@ const styles = {
     imageGrid: tw`flex flex-wrap justify-center items-center`,
     imageItem: tw`w-1/2 p-1 shadow rounded-lg`,
     image: { width: '100%', height: 100, borderRadius: 5 },
-    textInputStyle: tw`border border-gray-300 rounded-lg p-2 text-center`
+    textInputStyle: tw`border border-gray-300 rounded-lg p-2 text-center`,
+    group: tw`mb-4 p-3 border border-gray-300 rounded-lg shadow` // Se añade sombra al grupo
 };
 
 const ImagePickerScreen = () => {
     const [images, setImages] = useState([]);
     const [Ruta, setRuta] = useState('');
+    const [manifiesto, setManifiesto] = useState('');
+    const [categoria, setCategoria] = useState('');
+    const { user } = useContext(UserContext);
 
     useEffect(() => {
         // Obtener el identificador único del dispositivo
@@ -97,23 +100,6 @@ const ImagePickerScreen = () => {
         });
     };
 
-    const compressImage = async (uri) => {
-        try {
-            const compressedImage = await ImageResizer.createResizedImage(
-                uri, // image uri
-                800, // width to resize to
-                600, // height to resize to
-                'JPEG', // format (JPEG, PNG)
-                80, // quality (0-100)
-                0 // rotation
-            );
-            return compressedImage.uri;
-        } catch (error) {
-            console.error('Error compressing image:', error);
-            return null;
-        }
-    };
-
     const getFileSize = async (uri) => {
         try {
             const stat = await RNFS.stat(uri);
@@ -145,33 +131,26 @@ const ImagePickerScreen = () => {
             const originalSize = await getFileSize(image.uri);
             console.log(`Original size of image: ${originalSize} bytes`);
 
-            const compressedUri = await compressImage(image.uri); // Compress the image
-            if (compressedUri) {
-                const compressedSize = await getFileSize(compressedUri);
-                console.log(`Compressed size of image: ${compressedSize} bytes`);
-
-                const base64 = await convertToBase64(compressedUri); // Convert compressed image to Base64
-                if (base64) {
-                    console.log(`Size of image in Base64: ${base64.length} characters`);
-                }
-                return {
-                    base64,
-                    path: image.uri
-                };
+            const base64 = await convertToBase64(image.uri); // Convert original image to Base64
+            if (base64) {
+                console.log(`Size of image in Base64: ${base64.length} characters`);
             }
-            return null;
+            return {
+                base64,
+                path: image.uri
+            };
         }));
 
         // Enviar cada imagen en una petición separada
         let allUploadsSuccessful = true;
         for (const image of base64Images.filter(image => image !== null)) {
             const data = {
-                ruta: "2",
-                usuario: "lhld",
-                manifiesto: "1234",
+                ruta: Ruta,
+                usuario: user.name,
+                manifiesto: manifiesto,
                 imagenBase64: image.base64,
                 tipoDeImagen: "png",
-                categoria: "Autos"
+                categoria: categoria
             };
 
             try {
@@ -204,7 +183,7 @@ const ImagePickerScreen = () => {
         <ScrollView style={styles.scrollView}>
             <View style={styles.view}>
                 <View style={styles.group}>
-                    <Text style={styles.groupTitle}>Cargar Evidencia</Text>
+                    <Text style={styles.groupTitle}>Cargar Evidencia, {user.name}</Text>
                     <TextInput
                         style={[styles.textInputStyle, { width: '100%' }]}
                         placeholder="Ruta"
@@ -214,6 +193,19 @@ const ImagePickerScreen = () => {
                             const numericValue = text.replace(/[^0-9]/g, '');
                             setRuta(numericValue);
                         }}
+                    />
+                    <TextInput
+                        style={[styles.textInputStyle, { width: '100%' }]}
+                        placeholder="Manifiesto"
+                        value={manifiesto}
+                        onChangeText={text => setManifiesto(text)}
+                    />
+
+                    <TextInput
+                        style={[styles.textInputStyle, { width: '100%' }]}
+                        placeholder="Categoria"
+                        value={categoria}
+                        onChangeText={text => setCategoria(text)}
                     />
 
                     <Button title="Seleccionar Manifiestos" onPress={handleSelectImages} />

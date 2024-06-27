@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { loginUser } from '../Fetch/AuthService';
@@ -7,7 +7,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import NetInfo from "@react-native-community/netinfo";
 import LogoImage from '../assets/LogoDisplay.png';  // Ajusta la ruta según tu estructura de carpetas
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { UserContext } from '../App';
 //esta es la base del codigo 10:16 pm 29 abril
 
 
@@ -25,6 +25,7 @@ function LoginScreen({ navigation }) {
     const [password, setPassword] = useState('');
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [rememberCredentials, setRememberCredentials] = useState(false);
+    const { setUser } = useContext(UserContext);
 
     useEffect(() => {
         const unsubscribe = NetInfo.addEventListener(state => {
@@ -55,6 +56,7 @@ function LoginScreen({ navigation }) {
                     console.error('Error managing AsyncStorage:', error);
                     // Considera cómo manejar este error, e.g., mostrar un mensaje al usuario
                 }
+                setUser(result.user);
                 navigation.navigate('Drawer', { screen: 'ChecadorDrawer', params: { screen: 'Checador', params: { user: result.user } } });
             } else {
                 console.log('Login fallido', result);
