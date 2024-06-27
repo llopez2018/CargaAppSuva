@@ -9,7 +9,6 @@ import ManifiestoRuta from './screens/ManifiestosRuta'; // Asegúrate de que la 
 import DetalleManifiestoScreen from './screens/DetalleManifiestoScreen'; // Asegúrate de que la ruta es correcta
 import ImagePickerScreen from './screens/ImagePickerScreen';
 
-
 export const UserContext = React.createContext();
 
 const Stack = createNativeStackNavigator();
@@ -22,8 +21,8 @@ const DrawerNavigator = () => {
       drawerContent={props => <CustomDrawerContent {...props} />}
     >
       <Drawer.Screen name="Checador Suvalsa" component={ChecadorStack} />
-      <Stack.Screen name='Manifiesto' component={ManifiestoRuta} />
-      <Stack.Screen name='Carga Fotografias' component={ImagePickerScreen} />
+      <Stack.Screen name="Manifiesto" component={ManifiestoRuta} />
+      <Stack.Screen name="Carga Fotografias" component={ImagePickerScreen} />
     </Drawer.Navigator>
 
   );

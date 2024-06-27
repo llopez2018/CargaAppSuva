@@ -28,7 +28,7 @@ export const loginUser = async (email, password) => {
             console.log('Realizando petición a:', `${BASE_URL}/usuariosLogin/email/${email}`);
             const response = await Promise.race([
                 fetch(`${BASE_URL}/usuariosLogin/email/${email}`),
-                timeout(30000)  // 10 segundos de tiempo de espera
+                timeout(30000)  // 30 segundos de tiempo de espera
             ]);
 
             if (!response.ok) {
@@ -45,7 +45,6 @@ export const loginUser = async (email, password) => {
             throw error;  // Re-throw the error to be handled by the retry logic
         }
     };
-
 
     try {
         const data = await retry(makeRequest);

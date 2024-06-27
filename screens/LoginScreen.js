@@ -8,8 +8,6 @@ import NetInfo from "@react-native-community/netinfo";
 import LogoImage from '../assets/LogoDisplay.png';  // Ajusta la ruta según tu estructura de carpetas
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserContext } from '../App';
-//esta es la base del codigo 10:16 pm 29 abril
-
 
 const styles = StyleSheet.create({
     textShadow: {
@@ -18,7 +16,6 @@ const styles = StyleSheet.create({
         textShadowRadius: 10
     }
 });
-
 
 function LoginScreen({ navigation }) {
     const [username, setUsername] = useState('');
@@ -29,11 +26,7 @@ function LoginScreen({ navigation }) {
 
     useEffect(() => {
         const unsubscribe = NetInfo.addEventListener(state => {
-            console.log("Connection type", state.type);
-            console.log("Is connected?", state.isConnected);
-
             if (!state.isConnected) {
-                console.log("No internet connection");
                 alert("Tu dispositivo no está conectado a internet. Por favor, verifica tu conexión.");
             }
         });
@@ -42,35 +35,26 @@ function LoginScreen({ navigation }) {
     }, []);
 
     const handleLogin = async () => {
-        console.log('Inicio del proceso de login');
         try {
             const result = await loginUser(username, password);
             if (result.success) {
-                try {
-                    if (rememberCredentials) {
-                        await AsyncStorage.setItem('userCredentials', JSON.stringify({ username, password }));
-                    } else {
-                        await AsyncStorage.removeItem('userCredentials');
-                    }
-                } catch (error) {
-                    console.error('Error managing AsyncStorage:', error);
-                    // Considera cómo manejar este error, e.g., mostrar un mensaje al usuario
+                if (rememberCredentials) {
+                    await AsyncStorage.setItem('userCredentials', JSON.stringify({ username, password }));
+                } else {
+                    await AsyncStorage.removeItem('userCredentials');
                 }
                 setUser(result.user);
-                navigation.navigate('Drawer', { screen: 'ChecadorDrawer', params: { screen: 'Checador', params: { user: result.user } } });
+                navigation.navigate('Drawer');
             } else {
-                console.log('Login fallido', result);
                 alert('Credenciales incorrectas o no se pudo autenticar');
             }
         } catch (error) {
-            console.error('Error en el proceso de login:', error);
             alert('Error de conexión: ' + error.message);
         }
     };
 
     return (
         <LinearGradient
-            // Aquí actualizas los colores para el degradado de azul a morado
             colors={['#4c669f', '#5a55ae', '#673ab7', '#8e44ad']}
             style={tw`flex-1 items-center justify-center`}
         >
@@ -102,14 +86,12 @@ function LoginScreen({ navigation }) {
                         onPress={() => setIsPasswordVisible(!isPasswordVisible)}
                         style={tw`ml-2`}
                     >
-
                         <MaterialCommunityIcons
                             name={isPasswordVisible ? 'eye' : 'eye-off'}
-                            color={isPasswordVisible ? "green" : "gray"}  // Cambia de color para indicar el estado
-                            size={30}  // Aumentado para mejor interacción
+                            color={isPasswordVisible ? "green" : "gray"}
+                            size={30}
                         />
                     </TouchableOpacity>
-
                 </View>
                 <View style={tw`flex-row items-center w-full`}>
                     <TouchableOpacity
@@ -122,7 +104,7 @@ function LoginScreen({ navigation }) {
                             color={rememberCredentials ? 'blue' : 'gray'}
                         />
                     </TouchableOpacity>
-                    <Text style={tw`text-gray-700 text-justify font-bold `}>No olvidar credenciales</Text>
+                    <Text style={tw`text-gray-700 text-justify font-bold`}>No olvidar credenciales</Text>
                 </View>
 
                 <TouchableOpacity
@@ -131,10 +113,7 @@ function LoginScreen({ navigation }) {
                 >
                     <Text style={tw`text-white`}>Iniciar Sesión</Text>
                 </TouchableOpacity>
-
             </View>
-
-
         </LinearGradient>
     );
 }
