@@ -49,6 +49,7 @@ const ChecadorScreen = ({ route, navigation }) => {
     const [kilometrajeFin, setKilometrajeFin] = useState('');
 
     const userName = user?.name;
+    const emailUser = user?.email;
     const tipousuario = user?.type;
 
     const activeButtonStyle = tw`bg-blue-500 w-full h-20 py-6 rounded-lg shadow-lg mb-4`;
@@ -117,11 +118,11 @@ const ChecadorScreen = ({ route, navigation }) => {
             }
 
             const data = {
-                userName: userName,
+                userName: emailUser,
                 tipoUser: tipousuario,
                 kminicial: action === 'inicio' ? kilometrajeInicio : '',
                 kmfinal: action === 'fin' ? kilometrajeFin : '',
-                clave: "LHLD",
+                clave: userName,
                 fechaInicio: action === 'inicio' ? moment().format('YYYY-MM-DDTHH:mm:ss') : '',
                 fechaFin: action === 'fin' ? moment().format('YYYY-MM-DDTHH:mm:ss') : '',
                 localizacionInicio: action === 'inicio' ? `latitude: ${location.coords.latitude}, longitude: ${location.coords.longitude}` : '',
@@ -173,6 +174,15 @@ const ChecadorScreen = ({ route, navigation }) => {
                     onChangeText={(value) => handleKilometrajeChange(value, setKilometrajeInicio)}
                     editable={!state.inicioDiaCompletado} // Bloquea si ya se ha completado
                 />
+                <View style={tw`mt-4`}>
+                </View>
+                <TouchableOpacity
+                    onPress={() => handleInicioDia('inicio')}
+                    style={(!kilometrajeInicio || kilometrajeInicio.length < 3 || state.inicioDiaCompletado || state.isLoading) ? disabledButtonStyle : activeButtonStyle}
+                    disabled={!kilometrajeInicio || kilometrajeInicio.length < 3 || state.isLoading || state.inicioDiaCompletado}
+                >
+                    <Text style={tw`text-center text-white text-lg`}>{state.isLoading ? 'Registrando...' : 'INICIO'}</Text>
+                </TouchableOpacity>
             </View>
 
             <View style={tw`mb-4`}>
@@ -185,16 +195,8 @@ const ChecadorScreen = ({ route, navigation }) => {
                     onChangeText={(value) => handleKilometrajeChange(value, setKilometrajeFin)}
                     editable={!state.finDiaCompletado} // Bloquea si ya se ha completado
                 />
-            </View>
-
-            <View style={tw`flex-grow items-center justify-around`}>
-                <TouchableOpacity
-                    onPress={() => handleInicioDia('inicio')}
-                    style={(!kilometrajeInicio || kilometrajeInicio.length < 3 || state.inicioDiaCompletado || state.isLoading) ? disabledButtonStyle : activeButtonStyle}
-                    disabled={!kilometrajeInicio || kilometrajeInicio.length < 3 || state.isLoading || state.inicioDiaCompletado}
-                >
-                    <Text style={tw`text-center text-white text-lg`}>{state.isLoading ? 'Registrando...' : 'INICIO'}</Text>
-                </TouchableOpacity>
+                <View style={tw`mt-4`}>
+                </View>
                 <TouchableOpacity
                     onPress={() => handleInicioDia('fin')}
                     style={(!kilometrajeInicio || kilometrajeInicio.length < 3 || !kilometrajeFin || kilometrajeFin.length < 3 || state.finDiaCompletado || !state.finDiaHoraCompletado || state.isLoading) ? disabledButtonStyle : activeButtonStyle}
@@ -202,6 +204,11 @@ const ChecadorScreen = ({ route, navigation }) => {
                 >
                     <Text style={tw`text-center text-white text-lg`}>{state.isLoading ? 'Registrando...' : 'FIN'}</Text>
                 </TouchableOpacity>
+            </View>
+
+            <View style={tw`flex-grow items-center justify-around`}>
+
+
             </View>
         </ScrollView>
     );

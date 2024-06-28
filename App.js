@@ -22,7 +22,7 @@ const DrawerNavigator = () => {
     >
       <Drawer.Screen name="Checador Suvalsa" component={ChecadorStack} />
       <Stack.Screen name="Manifiesto" component={ManifiestoRuta} />
-      <Stack.Screen name="Carga Fotografias" component={ImagePickerScreen} />
+      <Stack.Screen name="Carga Gastos/Evidencia" component={ImagePickerScreen} />
     </Drawer.Navigator>
 
   );

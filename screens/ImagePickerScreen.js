@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Button, Text, ScrollView, Alert, Image, PermissionsAndroid, Platform, TextInput } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import tw from 'tailwind-react-native-classnames';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import RNFS from 'react-native-fs';
-import { fetchPostCrearImagen } from '../Fetch/CrearImagenes';  // Import the API service function
-import DeviceInfo from 'react-native-device-info';  // Import Device Info
+import { BASE_URL, createEntity } from '../Fetch/CategoriasService';  // Import BASE_URL and createEntity
+import DeviceInfo from 'react-native-device-info';
 import { UserContext } from '../App';
+import { fetchRutasNombre } from '../Fetch/RutasCarga';
 
 const styles = {
     scrollView: tw`bg-white bg-opacity-80 rounded-lg p-5 `,
@@ -17,23 +19,86 @@ const styles = {
     imageItem: tw`w-1/2 p-1 shadow rounded-lg`,
     image: { width: '100%', height: 100, borderRadius: 5 },
     textInputStyle: tw`border border-gray-300 rounded-lg p-2 text-center`,
-    group: tw`mb-4 p-3 border border-gray-300 rounded-lg shadow` // Se añade sombra al grupo
+    group: tw`mb-4 p-3 border border-gray-300 rounded-lg shadow`,
+    pickerWrapper: tw`border border-gray-300 rounded-lg p-2 mb-4 bg-white`,
+    picker: tw`w-full text-center`,
+};
+
+const categoryFields = {
+    Alimentos: [
+        { name: 'fecha', placeholder: 'Fecha', type: 'date' },
+        { name: 'lugar', placeholder: 'Lugar', type: 'text' },
+        { name: 'importe', placeholder: 'Importe', type: 'number' }
+    ],
+    Hoteles: [
+        { name: 'fecha', placeholder: 'Fecha', type: 'date' },
+        { name: 'lugar', placeholder: 'Lugar', type: 'text' },
+        { name: 'factura', placeholder: 'Factura', type: 'text' },
+        { name: 'importe', placeholder: 'Importe', type: 'number' }
+    ],
+    Combustible: [
+        { name: 'fecha', placeholder: 'Fecha', type: 'date' },
+        { name: 'porcentaje_tanque', placeholder: 'Porcentaje Tanque', type: 'number' },
+        { name: 'kilometraje', placeholder: 'Kilometraje', type: 'number' },
+        { name: 'proveedor', placeholder: 'Proveedor', type: 'text' },
+        { name: 'poblacion', placeholder: 'Población', type: 'text' },
+        { name: 'factura', placeholder: 'Factura', type: 'text' },
+        { name: 'litros', placeholder: 'Litros', type: 'number' },
+        { name: 'metodo_pago', placeholder: 'Método de Pago', type: 'text' }
+    ],
+    Casetas: [
+        { name: 'fecha', placeholder: 'Fecha', type: 'date' },
+        { name: 'lugar', placeholder: 'Lugar', type: 'text' },
+        { name: 'importe', placeholder: 'Importe', type: 'number' }
+    ],
+    Reparacion_y_Mantenimiento: [
+        { name: 'fecha', placeholder: 'Fecha', type: 'date' },
+        { name: 'concepto', placeholder: 'Concepto', type: 'text' },
+        { name: 'importe', placeholder: 'Importe', type: 'number' }
+    ],
+    Imprevistos: [
+        { name: 'fecha', placeholder: 'Fecha', type: 'date' },
+        { name: 'concepto', placeholder: 'Concepto', type: 'text' },
+        { name: 'importe', placeholder: 'Importe', type: 'number' }
+    ],
+    Depositos: [
+        { name: 'fecha', placeholder: 'Fecha', type: 'date' },
+        { name: 'importe', placeholder: 'Importe', type: 'number' }
+    ],
+    Observaciones: [
+        { name: 'observacion', placeholder: 'Observación', type: 'text' }
+    ],
+    Firmas: [
+        { name: 'operador_responsable', placeholder: 'Operador Responsable', type: 'text' },
+        { name: 'firma_autorizacion', placeholder: 'Firma Autorización', type: 'text' }
+    ],
 };
 
 const ImagePickerScreen = () => {
     const [images, setImages] = useState([]);
-    const [Ruta, setRuta] = useState('');
-    const [manifiesto, setManifiesto] = useState('');
-    const [categoria, setCategoria] = useState('');
+    const [formState, setFormState] = useState({});
+    const [selectedCategory, setSelectedCategory] = useState('');
     const { user } = useContext(UserContext);
+    const [rutas, setRutas] = useState([]);
+    const [selectedRuta, setSelectedRuta] = useState('');
+    const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
-        // Obtener el identificador único del dispositivo
         const fetchDeviceInfo = async () => {
             const uniqueId = await DeviceInfo.getUniqueId();
         };
-
         fetchDeviceInfo();
+
+        const fetchRutas = async () => {
+            try {
+                const rutasData = await fetchRutasNombre();
+                setRutas(rutasData);
+            } catch (error) {
+                console.error('Error fetching rutas:', error);
+            }
+        };
+
+        fetchRutas();
     }, []);
 
     const requestCameraPermission = async () => {
@@ -121,7 +186,6 @@ const ImagePickerScreen = () => {
     };
 
     const grabar = async () => {
-        // Verificar si no hay imágenes cargadas
         if (images.length === 0) {
             Alert.alert('Alerta de verificacion', 'No se han cargado imágenes para almacenar.');
             return;
@@ -131,7 +195,7 @@ const ImagePickerScreen = () => {
             const originalSize = await getFileSize(image.uri);
             console.log(`Original size of image: ${originalSize} bytes`);
 
-            const base64 = await convertToBase64(image.uri); // Convert original image to Base64
+            const base64 = await convertToBase64(image.uri);
             if (base64) {
                 console.log(`Size of image in Base64: ${base64.length} characters`);
             }
@@ -141,42 +205,111 @@ const ImagePickerScreen = () => {
             };
         }));
 
-        // Enviar cada imagen en una petición separada
-        let allUploadsSuccessful = true;
+        const endpointMap = {
+            Alimentos: 'api/alimentos',
+            Hoteles: 'api/hoteles',
+            Combustible: 'api/combustibles',
+            Casetas: 'api/casetas',
+            Reparacion_y_Mantenimiento: 'api/reparacionesymantenimiento',
+            Imprevistos: 'api/imprevistos',
+            Depositos: 'api/depositos',
+            Observaciones: 'api/observaciones',
+            Firmas: 'api/firmas',
+        };
+
         for (const image of base64Images.filter(image => image !== null)) {
+            const endpoint = endpointMap[selectedCategory];
+            const url = `${BASE_URL}${endpoint}`;
+            console.log('Sending data to:', url);
+
             const data = {
-                ruta: Ruta,
-                usuario: user.name,
-                manifiesto: manifiesto,
+                viajeId: selectedRuta,
+                fecha: currentDate,
                 imagenBase64: image.base64,
-                tipoDeImagen: "png",
-                categoria: categoria
             };
 
+            switch (selectedCategory) {
+                case 'Alimentos':
+                    data.lugar = formState.lugar;
+                    data.importe = parseFloat(formState.importe);
+                    break;
+                case 'Hoteles':
+                    data.lugar = formState.lugar;
+                    data.factura = formState.factura;
+                    data.importe = parseFloat(formState.importe);
+                    break;
+                case 'Combustible':
+                    data.porcentaje_tanque = parseFloat(formState.porcentaje_tanque);
+                    data.kilometraje = parseInt(formState.kilometraje, 10);
+                    data.proveedor = formState.proveedor;
+                    data.poblacion = formState.poblacion;
+                    data.factura = formState.factura;
+                    data.litros = parseFloat(formState.litros);
+                    data.metodo_pago = formState.metodo_pago;
+                    break;
+                case 'Casetas':
+                    data.lugar = formState.lugar;
+                    data.importe = parseFloat(formState.importe);
+                    break;
+                case 'Reparacion_y_Mantenimiento':
+                    data.concepto = formState.concepto;
+                    data.importe = parseFloat(formState.importe);
+                    break;
+                case 'Imprevistos':
+                    data.concepto = formState.concepto;
+                    data.importe = parseFloat(formState.importe);
+                    break;
+                case 'Depositos':
+                    data.importe = parseFloat(formState.importe);
+                    break;
+                case 'Observaciones':
+                    data.observacion = formState.observacion;
+                    break;
+                case 'Firmas':
+                    data.operador_responsable = formState.operador_responsable;
+                    data.firma_autorizacion = formState.firma_autorizacion;
+                    break;
+                default:
+                    break;
+            }
+
+            console.log('Data:', JSON.stringify(data, null, 2));
+
             try {
-                const responseStatus = await fetchPostCrearImagen(data);
-                if (responseStatus !== 200) {
-                    Alert.alert('Error', `Failed to upload image. Status code: ${responseStatus}`);
-                    allUploadsSuccessful = false;
+                const response = await createEntity(endpoint, data);
+                if (!response) {
+                    Alert.alert('Error', 'Failed to upload image');
+                } else {
+                    Alert.alert('Success', 'All images uploaded successfully!', [
+                        {
+                            text: 'OK',
+                            onPress: () => {
+                                setImages([]);
+                            }
+                        }
+                    ]);
                 }
             } catch (error) {
                 Alert.alert('Error', `Failed to upload image: ${error.message}`);
-                allUploadsSuccessful = false;
             }
         }
+    };
 
-        if (allUploadsSuccessful) {
-            // Mostrar alerta de éxito
-            Alert.alert('Success', 'All images uploaded successfully!', [
-                {
-                    text: 'OK',
-                    onPress: () => {
-                        // Limpiar la pantalla
-                        setImages([]);
-                    }
-                }
-            ]);
-        }
+
+    const renderFields = () => {
+        if (!selectedCategory) return null;
+
+        return categoryFields[selectedCategory].map(field => (
+            <TextInput
+                key={field.name}
+                style={styles.textInputStyle}
+                placeholder={field.placeholder}
+                value={field.type === 'date' ? currentDate : formState[field.name]}
+                onChangeText={text => setFormState({ ...formState, [field.name]: text })}
+                keyboardType={field.type === 'number' ? 'numeric' : 'default'}
+                editable={field.type !== 'date'}
+            />
+        ));
     };
 
     return (
@@ -184,29 +317,34 @@ const ImagePickerScreen = () => {
             <View style={styles.view}>
                 <View style={styles.group}>
                     <Text style={styles.groupTitle}>Cargar Evidencia, {user.name}</Text>
-                    <TextInput
-                        style={[styles.textInputStyle, { width: '100%' }]}
-                        placeholder="Ruta"
-                        value={Ruta}
-                        onChangeText={text => {
-                            // Only allow numbers
-                            const numericValue = text.replace(/[^0-9]/g, '');
-                            setRuta(numericValue);
-                        }}
-                    />
-                    <TextInput
-                        style={[styles.textInputStyle, { width: '100%' }]}
-                        placeholder="Manifiesto"
-                        value={manifiesto}
-                        onChangeText={text => setManifiesto(text)}
-                    />
 
-                    <TextInput
-                        style={[styles.textInputStyle, { width: '100%' }]}
-                        placeholder="Categoria"
-                        value={categoria}
-                        onChangeText={text => setCategoria(text)}
-                    />
+                    <View style={styles.pickerWrapper}>
+                        <Picker
+                            selectedValue={selectedRuta}
+                            onValueChange={(itemValue) => setSelectedRuta(itemValue)}
+                            style={styles.picker}
+                        >
+                            <Picker.Item label="Seleccione una ruta" value="" />
+                            {rutas.map((ruta) => (
+                                <Picker.Item key={ruta.id} label={ruta.nombre} value={ruta.id} />
+                            ))}
+                        </Picker>
+                    </View>
+
+                    <View style={styles.pickerWrapper}>
+                        <Picker
+                            selectedValue={selectedCategory}
+                            onValueChange={(itemValue) => setSelectedCategory(itemValue)}
+                            style={styles.picker}
+                        >
+                            <Picker.Item label="Seleccione una categoría" value="" />
+                            {Object.keys(categoryFields).map((category) => (
+                                <Picker.Item key={category} label={category} value={category} />
+                            ))}
+                        </Picker>
+                    </View>
+
+                    {renderFields()}
 
                     <Button title="Seleccionar Manifiestos" onPress={handleSelectImages} />
                     <Button title="Tomar Foto" onPress={takePhoto} />
