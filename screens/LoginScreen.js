@@ -5,7 +5,7 @@ import { loginUser } from '../Fetch/AuthService';
 import tw from 'tailwind-react-native-classnames';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import NetInfo from "@react-native-community/netinfo";
-import LogoImage from '../assets/LogoDisplay.png';  // Ajusta la ruta según tu estructura de carpetas
+import LogoImage from '../assets/LogoDisplay.png';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserContext } from '../App';
 
@@ -25,6 +25,22 @@ function LoginScreen({ navigation }) {
     const { setUser } = useContext(UserContext);
 
     useEffect(() => {
+        const loadCredentials = async () => {
+            try {
+                const storedCredentials = await AsyncStorage.getItem('userCredentials');
+                if (storedCredentials) {
+                    const { username, password } = JSON.parse(storedCredentials);
+                    setUsername(username);
+                    setPassword(password);
+                    setRememberCredentials(true); // Set rememberCredentials to true if we loaded stored credentials
+                }
+            } catch (error) {
+                console.error('Error loading stored credentials:', error);
+            }
+        };
+
+        loadCredentials();
+
         const unsubscribe = NetInfo.addEventListener(state => {
             if (!state.isConnected) {
                 alert("Tu dispositivo no está conectado a internet. Por favor, verifica tu conexión.");
