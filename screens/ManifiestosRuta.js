@@ -155,6 +155,17 @@ const styles = StyleSheet.create({
     container: tw`flex-1 bg-white p-5`,
     header: tw`text-center text-xl font-bold`,
     input: tw`bg-white w-11/12 rounded-md px-4 py-2 border border-gray-300 mb-4`,
+    scrollView: tw`bg-white bg-opacity-80 rounded-lg p-5 `,
+    view: tw`px-3 py-4`,
+    group_image: tw`mb-4 p-3 border border-gray-300 rounded-lg shadow bg-white bg-opacity-80 `,
+    groupTitle: tw`text-lg text-black mb-2 font-semibold text-center`,
+    imageGrid: tw`flex flex-wrap justify-center items-center`,
+    imageItem: tw`w-1/2 p-1 shadow rounded-lg`,
+    image: { width: '100%', height: 100, borderRadius: 5 },
+    textInputStyle: tw`border border-gray-300 rounded-lg p-2 text-center mb-4`,
+    group: tw`mb-4 p-3 border border-gray-300 rounded-lg shadow`,
+    pickerWrapper: tw`border border-gray-300 rounded-lg p-2 mb-4 bg-white`,
+    picker: tw`w-full text-center`,
     inputText: {
         height: 50, // Increase the height of the TextInput
     },
