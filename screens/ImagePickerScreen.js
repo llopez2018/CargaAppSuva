@@ -18,7 +18,7 @@ const styles = {
     imageGrid: tw`flex flex-wrap justify-center items-center`,
     imageItem: tw`w-1/2 p-1 shadow rounded-lg`,
     image: { width: '100%', height: 100, borderRadius: 5 },
-    textInputStyle: tw`border border-gray-300 rounded-lg p-2 text-center`,
+    textInputStyle: tw`border border-gray-300 rounded-lg p-2 text-center mb-4`,
     group: tw`mb-4 p-3 border border-gray-300 rounded-lg shadow`,
     pickerWrapper: tw`border border-gray-300 rounded-lg p-2 mb-4 bg-white`,
     picker: tw`w-full text-center`,
@@ -300,15 +300,16 @@ const ImagePickerScreen = () => {
         if (!selectedCategory) return null;
 
         return categoryFields[selectedCategory].map(field => (
-            <TextInput
-                key={field.name}
-                style={styles.textInputStyle}
-                placeholder={field.placeholder}
-                value={field.type === 'date' ? currentDate : formState[field.name]}
-                onChangeText={text => setFormState({ ...formState, [field.name]: text })}
-                keyboardType={field.type === 'number' ? 'numeric' : 'default'}
-                editable={field.type !== 'date'}
-            />
+            <View key={field.name} style={tw`mb-4`}>
+                <TextInput
+                    style={styles.textInputStyle}
+                    placeholder={field.placeholder}
+                    value={field.type === 'date' ? currentDate : formState[field.name]}
+                    onChangeText={text => setFormState({ ...formState, [field.name]: text })}
+                    keyboardType={field.type === 'number' ? 'numeric' : 'default'}
+                    editable={field.type !== 'date'}
+                />
+            </View>
         ));
     };
 
