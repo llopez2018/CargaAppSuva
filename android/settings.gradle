@@ -1,4 +1,6 @@
 rootProject.name = 'CargaSuvalsa'
 apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesSettingsGradle(settings)
 include ':app'
+include ':react-native-document-scanner-plugin'
+project(':react-native-document-scanner-plugin').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-document-scanner-plugin/android')
 includeBuild('../node_modules/@react-native/gradle-plugin')

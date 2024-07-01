@@ -9,6 +9,7 @@ import { BASE_URL, createEntity } from '../Fetch/CategoriasService';  // Import 
 import DeviceInfo from 'react-native-device-info';
 import { UserContext } from '../App';
 import { fetchRutasNombre } from '../Fetch/RutasCarga';
+import DocumentScanner from 'react-native-document-scanner-plugin';
 
 const styles = {
     scrollView: tw`bg-white bg-opacity-80 rounded-lg p-5 `,
@@ -146,6 +147,33 @@ const ImagePickerScreen = () => {
                 setImages(prevImages => [...prevImages, ...newImages]);
             }
         });
+    };
+
+    const scanPhoto = async () => {
+        const hasPermission = await requestCameraPermission();
+        if (!hasPermission) {
+            Alert.alert('Permission denied', 'You need to give permission to access the camera.');
+            return;
+        }
+
+        try {
+            const result = await DocumentScanner.scanDocument();
+            console.log('Scan result:', result);  // Agregar esta línea para depuración
+            if (result && result.scannedImages) {
+                const newImages = result.scannedImages.map(uri => ({
+                    uri: uri,
+                    width: null,  // Ajustar según sea necesario
+                    height: null,  // Ajustar según sea necesario
+                }));
+                setImages(prevImages => [...prevImages, ...newImages]);
+            } else {
+                console.log('ScanDocument Error: No scanned images found.');
+                Alert.alert('Error', 'No scanned images found.');
+            }
+        } catch (error) {
+            console.log('ScanDocument Error: ', error);
+            Alert.alert('Error', `ScanDocument Error: ${error.message}`);
+        }
     };
 
     const handleSelectImages = async () => {
@@ -295,7 +323,6 @@ const ImagePickerScreen = () => {
         }
     };
 
-
     const renderFields = () => {
         if (!selectedCategory) return null;
 
@@ -349,6 +376,7 @@ const ImagePickerScreen = () => {
 
                     <Button title="Seleccionar Manifiestos" onPress={handleSelectImages} />
                     <Button title="Tomar Foto" onPress={takePhoto} />
+                    <Button title="Escanear Foto" onPress={scanPhoto} />
                 </View>
                 <View style={styles.group_image}>
                     <View style={styles.imageGrid}>

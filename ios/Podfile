@@ -16,6 +16,7 @@ end
 
 target 'CargaSuvalsa' do
   config = use_native_modules!
+pod 'react-native-document-scanner-plugin', :path => '../node_modules/react-native-document-scanner-plugin'
 
   use_react_native!(
     :path => config[:reactNativePath],
